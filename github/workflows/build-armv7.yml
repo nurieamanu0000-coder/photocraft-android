@@ -1,0 +1,35 @@
+name: Build 32-bit Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-armv7:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: android-port
+
+      - name: Install Rust and ARMv7 target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: armv7-linux-androideabi
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
+
+      - name: Build 32-bit native library
+        working-directory: apps/photocraft-android
+        run: cargo ndk -t armeabi-v7a -o app/src/main/jniLibs build --release
+
+      - name: Build Debug APK
+        working-directory: apps/photocraft-android
+        run: ./gradlew assembleDebug
+
+      - name: Upload 32-bit APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: photocraft-armv7-debug
+          path: apps/photocraft-android/app/build/outputs/apk/debug/*.apk
